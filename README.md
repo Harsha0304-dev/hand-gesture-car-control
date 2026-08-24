@@ -1,68 +1,107 @@
 # 🎮 Virtual Steering Wheel
 
-### Control a car game using your hands — no physical steering wheel required.
+### Control a racing game using your hands — no physical steering wheel required.
 
-**Virtual Steering Wheel** is a computer-vision-based project that uses **MediaPipe, Python, and your webcam** to detect hand gestures and convert them into keyboard controls for racing and car games.
+**Virtual Steering Wheel** is a real-time computer vision project that transforms natural hand movements into a virtual Xbox controller.
 
-Simply place both hands in front of the webcam as if you are holding a steering wheel. Your hand position and gesture determine whether the car accelerates, brakes, or turns.
+Using a webcam and **MediaPipe**, the system tracks both hands, detects hand gestures, calculates the steering angle from wrist positions, and translates these movements into steering, acceleration, and braking controls.
 
 ---
 
 ## 🚗 How It Works
 
-The webcam continuously captures your hand movements.
-
-The system uses **MediaPipe** to detect your hands and analyze:
-
-* Hand position
-* Hand orientation
-* Finger extension
-* Left/right steering direction
-* Fist vs. open-hand gestures
-
-These movements are then converted into keyboard inputs using **Pynput**.
+The system follows this pipeline:
 
 ```text
 Webcam
    ↓
-Hand Detection
+OpenCV Video Capture
    ↓
-MediaPipe
+MediaPipe Hand Tracking
    ↓
-Gesture & Tilt Analysis
+Hand Landmark Detection
    ↓
-Keyboard Control
+Gesture & Wrist-Angle Analysis
    ↓
-Car Game
+Steering / Throttle / Brake
+   ↓
+Virtual Xbox 360 Controller
+   ↓
+Racing Game
 ```
+
+The project detects up to **two hands** and uses their wrist positions to determine the steering direction and intensity.
 
 ---
 
 ## ✋ Gesture Controls
 
-| Hand Gesture                    | Car Action               | Keyboard Input |
-| ------------------------------- | ------------------------ | -------------- |
-| 👊 Both fists, hands level      | Accelerate               | ↑              |
-| 👊 Both fists, tilt left        | Accelerate + steer left  | ↑ + ←          |
-| 👊 Both fists, tilt right       | Accelerate + steer right | ↑ + →          |
-| 🖐️ Both hands open, level      | Brake                    | ↓              |
-| 🖐️ Both hands open, tilt left  | Brake + steer left       | ↓ + ←          |
-| 🖐️ Both hands open, tilt right | Brake + steer right      | ↓ + →          |
-| 👊🖐️ One fist + one open hand  | Neutral                  | —              |
-| No hands detected               | Release all keys         | —              |
+| Gesture                           | Action                        |
+| --------------------------------- | ----------------------------- |
+| 👊 Both fists                     | Accelerate                    |
+| 👊 Both fists + tilt left         | Accelerate + steer left       |
+| 👊 Both fists + tilt right        | Accelerate + steer right      |
+| 🖐️ Both hands open               | Brake                         |
+| 🖐️ Both hands open + tilt left   | Brake + steer left            |
+| 🖐️ Both hands open + tilt right  | Brake + steer right           |
+| 👊 + 🖐️ One fist + one open hand | Neutral / Coast               |
+| No hands detected                 | Release all controller inputs |
 
-> **Note:** Steering can be performed while accelerating or braking, allowing simultaneous steering and throttle/brake control.
+> **Note:** Steering works independently of acceleration and braking, allowing the car to turn while accelerating or braking.
+
+---
+
+## 🧠 Core Technology
+
+### MediaPipe Hand Tracking
+
+MediaPipe detects hand landmarks from the webcam feed and provides the coordinates required for gesture recognition and steering calculations.
+
+### Wrist-Angle Steering
+
+The system calculates the angle between the left and right wrists using their detected positions.
+
+Small movements around the center are ignored using a **dead zone** to reduce unwanted steering jitter.
+
+The steering value is then converted into an analog value between **-1 and +1** and sent to the virtual controller's left joystick.
+
+### Gesture-Based Throttle & Brake
+
+The system checks the number of extended fingers on each hand.
+
+* **Both fists → Accelerator**
+* **Both open hands → Brake**
+* **One fist + one open hand → Neutral**
+
+The accelerator and brake are mapped to the virtual Xbox controller's analog triggers.
+
+---
+
+## 🎮 Virtual Xbox Controller
+
+Instead of physically pressing keyboard keys, this project creates a **virtual Xbox 360 controller** using `vgamepad`.
+
+The controller provides:
+
+* 🎮 Analog steering
+* ⚡ Analog acceleration
+* 🛑 Analog braking
+* 🔄 Real-time controller updates
+
+This allows the project to work with games that support Xbox/controller input.
 
 ---
 
 ## 🧠 Technologies Used
 
-* **Python 3.9+**
-* **MediaPipe** — real-time hand tracking and landmark detection
-* **OpenCV** — webcam capture and image processing
-* **Pynput** — keyboard control
-* **NumPy** — numerical calculations
-* **Webcam** — input device
+| Technology    | Purpose                              |
+| ------------- | ------------------------------------ |
+| **Python**    | Core application                     |
+| **MediaPipe** | Real-time hand tracking              |
+| **OpenCV**    | Webcam capture and visual processing |
+| **NumPy**     | Numerical calculations and smoothing |
+| **vgamepad**  | Virtual Xbox 360 controller          |
+| **Webcam**    | Real-time input                      |
 
 ---
 
@@ -70,9 +109,10 @@ Car Game
 
 Before running the project, make sure you have:
 
-* Python **3.9 or higher**
+* Python 3.9+
 * A working webcam
-* A racing/car game controlled using keyboard arrow keys
+* Windows or macOS
+* A racing game that supports controller input
 
 ---
 
@@ -85,16 +125,16 @@ git clone https://github.com/Harsha0304-dev/hand-gesture-car-control.git
 cd hand-gesture-car-control
 ```
 
-Install the required dependencies:
-
-```bash
-pip install mediapipe opencv-python pynput numpy
-```
-
-Or install them using the requirements file:
+Install the dependencies:
 
 ```bash
 pip install -r requirements.txt
+```
+
+Or install them manually:
+
+```bash
+pip install mediapipe opencv-python numpy vgamepad
 ```
 
 ---
@@ -107,39 +147,37 @@ Start the virtual steering wheel:
 python steering_wheel.py
 ```
 
-A camera window will open and begin detecting your hands.
+The webcam window will open and begin tracking your hands.
 
-Press **Q** while the camera window is active to exit the program.
+Place both hands in front of the webcam as if you are holding a steering wheel.
+
+Press **Q** to exit.
 
 ---
 
 ## 🪟 Windows Setup
 
-The project supports Windows and automatically selects the appropriate camera backend.
+The project automatically selects the appropriate OpenCV camera backend for Windows.
 
-No manual backend modification is required.
+### 1. Install Python
 
-### Steps
+Install Python 3.9 or newer.
 
-**1. Install Python**
-
-Download and install Python from the official Python website.
-
-**2. Install dependencies**
+### 2. Install dependencies
 
 ```bash
-pip install mediapipe opencv-python pynput numpy
+pip install -r requirements.txt
 ```
 
-**3. Start the application**
+### 3. Run
 
 ```bash
 python steering_wheel.py
 ```
 
-**4. Camera not detected?**
+### 4. Camera not detected?
 
-Open `steering_wheel.py` and try changing:
+Open `steering_wheel.py` and change:
 
 ```python
 CAMERA_INDEX = 0
@@ -157,172 +195,95 @@ or:
 CAMERA_INDEX = 2
 ```
 
-> **Windows Camera Permission:** If Windows asks whether Python can access your camera, select **Allow**.
+> If Windows asks for camera permission, allow Python to access your camera.
 
 ---
 
 ## 🍎 macOS Setup
 
-This project was originally built and tested on **macOS with an Apple M2**.
+The project was originally developed and tested on **macOS with Apple M2**.
 
-macOS requires camera permission for the application running Python.
+macOS requires camera permission for applications using the webcam.
 
 Go to:
 
 **System Settings → Privacy & Security → Camera**
 
-Enable camera access for:
-
-* Terminal
-* Python
-* Your Python launcher, if applicable
-
-Then run the project again.
+Enable camera access for the application running Python.
 
 ---
 
 ## 🎛️ Configuration
 
-Several settings can be adjusted at the top of `steering_wheel.py`.
+The following settings can be adjusted at the top of `steering_wheel.py`.
 
-| Setting              | Default | Purpose                                                    |
-| -------------------- | ------: | ---------------------------------------------------------- |
-| `CAMERA_INDEX`       |     `0` | Selects the webcam                                         |
-| `DEAD_ZONE_DEG`      |    `12` | Ignores small steering movements near the center           |
-| `FLIP_CAMERA`        |  `True` | Mirrors the webcam feed                                    |
-| `GRACE_FRAMES`       |     `8` | Frames to wait before releasing keys when hands disappear  |
-| `OPEN_FINGER_THRESH` |     `3` | Number of extended fingers required to detect an open hand |
-
-### Example
-
-```python
-CAMERA_INDEX = 0
-DEAD_ZONE_DEG = 12
-FLIP_CAMERA = True
-GRACE_FRAMES = 8
-OPEN_FINGER_THRESH = 3
-```
+| Setting              | Default | Description                              |
+| -------------------- | ------: | ---------------------------------------- |
+| `CAMERA_INDEX`       |     `0` | Webcam index                             |
+| `DEAD_ZONE_DEG`      |     `5` | Steering dead zone                       |
+| `RELEASE_ZONE_DEG`   |     `3` | Steering release zone                    |
+| `MAX_STEER_DEG`      |    `32` | Maximum steering angle                   |
+| `STEERING_CURVE`     |  `0.70` | Steering sensitivity curve               |
+| `FLIP_CAMERA`        |  `True` | Mirrors the webcam feed                  |
+| `GRACE_FRAMES`       |     `8` | Delay before releasing controls          |
+| `OPEN_FINGER_THRESH` |     `3` | Fingers required for open-hand detection |
 
 ---
 
-## 🔧 Troubleshooting
+## 📊 Real-Time HUD
 
-### Camera doesn't open
+The application provides a visual dashboard displaying:
 
-Try changing:
+* Steering direction
+* Steering angle
+* Steering percentage
+* Accelerator / brake status
+* Left-hand state
+* Right-hand state
+* FPS
+* Hand detection status
+* Virtual steering wheel visualization
 
-```python
-CAMERA_INDEX = 0
-```
-
-to:
-
-```python
-CAMERA_INDEX = 1
-```
-
-or:
-
-```python
-CAMERA_INDEX = 2
-```
+This provides immediate feedback while controlling the game.
 
 ---
 
-### Steering direction is reversed
+## 🛡️ Safety Handling
 
-Try changing:
+If both hands disappear from the camera view, the system waits for a short grace period and then releases the controller inputs.
 
-```python
-FLIP_CAMERA = True
-```
-
-to:
-
-```python
-FLIP_CAMERA = False
-```
-
----
-
-### Keys remain pressed after removing your hands
-
-The system waits for approximately **8 frames** before releasing the keyboard inputs.
-
-Make sure your hands are completely outside the camera frame.
-
----
-
-### Brake doesn't activate
-
-Make sure your hands are clearly open and that at least **3 fingers are extended**.
-
----
-
-### Brake activates too easily
-
-Increase:
-
-```python
-OPEN_FINGER_THRESH = 4
-```
-
-This makes the open-hand detection more restrictive.
-
----
-
-### Low FPS or lag
-
-Try:
-
-* Reducing the webcam resolution
-* Closing unnecessary applications
-* Using a better-lit environment
-* Using a webcam with a higher frame rate
+This prevents the virtual controller from remaining stuck in an acceleration, braking, or steering state.
 
 ---
 
 ## 🎮 Compatible Games
 
-The project works with games that support **keyboard arrow-key controls**.
+The controller can be used with racing games that support Xbox/controller input.
 
-Examples include:
+The project also includes a controller implementation designed for **CrazyGames racing gameplay**.
 
-* 🦖 Google Chrome Dinosaur Game
-* 🏎️ Trackmania
-* 🚗 TORCS
-* 🏁 Hill Climb Racing (browser)
-* 🎮 Other PC/browser racing games using arrow keys
+Example use cases include:
+
+* 🏎️ Browser racing games
+* 🎮 PC racing games
+* 🏁 Controller-supported racing games
+* 🚗 CrazyGames racing titles
 
 ---
 
 ## 💡 Key Features
 
-* ✋ Hands-free car control
-* 📷 Real-time webcam input
+* ✋ Hands-free racing control
+* 📷 Real-time webcam processing
 * 🧠 MediaPipe hand tracking
-* 🎮 Keyboard-based game control
-* ↔️ Gesture-based steering
+* 👋 Gesture-based acceleration and braking
+* ↔️ Analog steering using wrist-angle detection
+* 🎮 Virtual Xbox 360 controller
 * ⚡ Real-time response
-* 🛑 Gesture-based braking
-* 🚗 Works with multiple arrow-key-based games
-* 🔧 Configurable detection parameters
+* 📊 Live performance HUD
+* 🎛️ Configurable steering sensitivity
+* 🛡️ Automatic controller input release
 * 💻 Windows and macOS support
-
----
-
-## 🔮 Possible Future Improvements
-
-Some possible extensions for the project include:
-
-* Multiple gesture profiles
-* Customizable controls
-* Speed estimation
-* More advanced hand gestures
-* Voice commands
-* Game-specific control profiles
-* Mobile/web-based control interface
-* AI-powered gesture classification
 
 ---
 
@@ -332,12 +293,27 @@ Some possible extensions for the project include:
 hand-gesture-car-control/
 │
 ├── steering_wheel.py
-├── hand_racing_game.py
 ├── hand_crazygames_controller.py
 ├── requirements.txt
 ├── README.md
-└── LICENSE
+└── .gitignore
 ```
+
+---
+
+## 🚀 Future Improvements
+
+Possible future enhancements include:
+
+* More advanced hand gestures
+* Custom gesture profiles
+* Adjustable controller mappings
+* Speed estimation
+* Voice-controlled features
+* Game-specific control profiles
+* Additional controller support
+* Improved gesture classification
+* More advanced computer vision features
 
 ---
 
@@ -345,13 +321,15 @@ hand-gesture-car-control/
 
 **B. Sri Harsha**
 
-Built as an exploration of **Computer Vision, Human-Computer Interaction, and real-time gesture-based control**.
+Built as an exploration of:
+
+**Computer Vision • Human-Computer Interaction • Gesture Recognition • Real-Time Game Control**
 
 ---
 
 ## ⭐ Support
 
-If you find this project interesting, consider giving the repository a ⭐ on GitHub!
+If you find this project interesting, consider giving the repository a ⭐ on GitHub.
 
 **Repository:**
 https://github.com/Harsha0304-dev/hand-gesture-car-control
